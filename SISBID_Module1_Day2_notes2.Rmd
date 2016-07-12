@@ -1,0 +1,188 @@
+---
+title: "Advanced Data Input / Output"
+author: "Katie Nishimura"
+date: "July 12, 2016"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Notes from SISBID day 2, lecture 1 (morning)
+
+### Set up a new repository in GitHub to store version of today's notes
+- Create a new repository on GitHub
+- Give it a name (SISBIDday2) and description
+- Make Public
+- Initialized this repository with a README
+- Create repository
+- Green button: Clone or Download
+- Save the link: https://github.com/katherinenishimura/SISBIDday2.git
+- Use this link when creating the new project in RStudio
+
+### Set up new project in RStudio where you will create code for version control
+- version control with github
+- RStudio > File > New Project
+- Version Control > GitHub
+- Copy Repository URL from your GitHub account on the website
+- Give it an approprite name
+- Create project
+
+### Start new Rnotebook file
+- save as .Rmd file
+
+### Install packages for importing data from google sheets
+- install the google sheets package
+?gs_read
+?"cell-specification"
+
+```{r chunk1-install-googlesheets, echo=TRUE}
+library(devtools)
+install_github("jennybc/googlesheets")
+library(googlesheets)
+```
+
+### Import data from google sheets
+- save data in "dat"
+- also output the date accessed
+
+```{r chunk2, echo=TRUE}
+sheets_url = "https://docs.google.com/spreadsheets/d/18KQQd4LY5k8Ucux1MvWCsQGQJlvd0ECTnn-3ixdOKFM/pubhtml"
+gsurl1 = gs_url(sheets_url)
+dat = gs_read(gsurl1)
+date_accessed <- date()
+date_accessed #date downloaded
+```
+
+### Look at results
+- https://docs.google.com/spreadsheets/d/103vUoftv2dLNZ_FcAz08b5ptIkWN4W2RaFn7VF39FJ8/edit#gid=0
+- pull sheet from google spread sheets
+- google docs > file > share
+- read in and assign to "dat"
+- look at the first 6 rows in "dat"
+
+
+```{r chunk3, echo=TRUE}
+head(dat)
+names(dat)
+```
+
+
+### Work on the lab
+- https://github.com/SISBID/Module1/blob/gh-pages/labs/google-sheets-lab.Rmd
+This is a lab to practice with Google Sheets and the googlesheets package.
+
+If you haven't already go to the class Google Sheet and add your information: https://docs.google.com/spreadsheets/d/103vUoftv2dLNZ_FcAz08b5ptIkWN4W2RaFn7VF39FJ8
+
+Use the googlesheets package to read in the data like we discussed in class.
+
+Look at the arguments for cell_rows, cell_limits and cell_cols.
+
+Try reading in just the first two columns.
+
+How many students are in the class (or at least have added their information to the Sheet)?
+
+Create a logical variable for whether students have more than 2 years of R experience
+
+Convert the logical variable from #6 into a factor with labels "Skilled" and "Learning"
+
+
+
+### JSON
+- another type ofdata format
+- a little more flexible for storing data
+- most social networking file is stored in this format (profiles)
+- key-value (firstName-John), where key=firstName, value=John
+- key-value = "address", with subfields within "address"
+- reading into R with jsonlite package
+
+
+```{r chunk4, echo=TRUE}
+install.packages("jsonlite")
+library(jsonlite)
+github_url = "https://api.github.com/users/jtleek/repos"
+jsonData <- fromJSON(github_url)
+jsonData$name
+dim(jsonData) #each row = 1 repo
+table(sapply(jsonData,class))
+dim(jsonData$owner)
+names(jsonData$owner)
+```
+
+- data.frames are nested variables (dataframe within a dataframe)
+
+```{r chunk5, echo=TRUE}
+sapply(jsonData, class)
+table(sapply(jsonData, class))
+dim(jsonData$owner)
+names(jsonData$owner)
+head(jsonData$owner)
+```
+
+
+
+### JSON lab 
+- Use Github API to get all of Hadley Wickham's repo data (username = "hadley")
+- How many stars does he have on each repository?
+- How many open issues are there?
+
+```{r chunk6, echo=TRUE}
+library(jsonlite) #load the library
+github_url = "https://api.github.com/users/hadley/repos" #use this url for hadley's repository
+jsonData <- fromJSON(github_url) #extract JSON data and save it in "jsonData"
+jsonData$name 
+names(jsonData) #variable names
+table(jsonData$stargazers_count) #number of stars
+dim(jsonData) #each row = 1 repo
+table(sapply(jsonData,class))
+dim(jsonData$owner)
+names(jsonData$owner)
+```
+
+### Web scraping notes
+- any website has downloadable-data, chrome right click, view page source 
+- this is what the computer sees (the html code behind the website)
+- can harvest data from this html file (this is web scraping)
+- click or select part of a webpage > inspect element
+- this will show you just the code for a specific part of the webpage
+- hover over the html code and find the line that codes for the entire table 
+- then right click > copy > xpath
+- copy > xpath (the tag for that element in the html code): xpath='//*[@id="recounttab"]/table'
+- use this tag to read the data from the web
+- use the rvest package
+
+```{r chunk7, echo=FALSE}
+install.packages("rvest")
+```
+
+```{r chunk8, echo=TRUE}
+library(rvest)
+recount_url = "http://bowtie-bio.sourceforge.net/recount/"
+htmlfile = read_html(recount_url) #read the html
+htmlfile #has the data from the entire webpage
+nds = html_nodes(htmlfile, xpath='//*[@id="recounttab"]/table') #just extract the node with this xpath (the table from the webpage)
+dat = html_table(nds) #convert the html data into a table
+dat = as.data.frame(dat) #convert the table into a dataframe
+head(dat)
+names(dat)
+dim(dat)
+names(dat) = dat[1,] #take the first row and assign it as the column names in "dat"
+dat1 <- dat[-1,] #remove the first row in "dat" and call it "dat1"
+head(dat1) #check
+```
+
+
+### API notes
+- 
+
+
+
+
+
+
+
+
+
