@@ -1,0 +1,229 @@
+---
+title: "Data Cleaning"
+author: "Katherine Nishimura"
+date: "July 12, 2016"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+### Notes from Module 1, Day 2, afternoon session 1
+- 
+
+### A. "Real Property Taxes" Dataset 
+
+Download the "real property taxes" dataset from the website (via OpenBaltimore), 
+he data is located here (note you don\'t need to unzip it to read it into R):
+http://sisbid.github.io/Module1/data/real_property_tax.csv.gz
+
+1. Read the Property Tax data into R and call it the variable `tax`
+- read.table to .gz documents (most, but not all gzipped .csv files)
+- read_csv(file.gz)
+
+##### install.packages("readr")
+
+```{r chunk1, echo=TRUE}
+library(readr)
+data_url <- "http://sisbid.github.io/Module1/data/real_property_tax.csv.gz"
+data <- read_csv(data_url)
+head(data)
+dim(data)
+names(data)
+```
+
+2. How many addresses pay property taxes? 
+
+```{r, chunk2, echo=TRUE}
+#convert cityTax and stateTax variables to numeric
+class(data$cityTax) #character
+#replace "$" with ""
+data$cityTax <- gsub(pattern = "$", replacement="", data$cityTax, fixed=TRUE) 
+data$stateTax <- gsub(pattern = "$", replacement="", data$stateTax, fixed=TRUE)
+# convert to numeric
+data$cityTax <- as.numeric(data$cityTax)
+data$stateTax <- as.numeric(data$stateTax)
+# check to see how many addresses pay property taxes
+summary(data$cityTax)
+summary(data$stateTax)
+data <- data[order(data$cityTax, decreasing=FALSE), ]
+dim(data)
+no_property_tax <- subset(data, data$cityTax < 1 )
+dim(no_property_tax) #72 rows where cityTax < 1
+rm(no_property_tax)
+```
+
+3. What is the total city and state tax paid?
+
+```{r, chunk3, echo=TRUE}
+#total city and state tax paid
+head(data)
+# generate column sums for columns in "data" that are numeric, removing NA values
+colSums(Filter(is.numeric, data), na.rm=TRUE) 
+```
+
+
+4. How many observations/properties are in each residence code?
+
+```{r, chunk4, echo=TRUE}
+# observations per residence code (resCode)
+table(data$resCode)
+```
+
+
+5. What is the 75th percentile of city and state tax paid by residence code?
+
+```{r, chunk5, echo=TRUE}
+# 75th percentile of city and state tax paid by residence code
+summary(data$cityTax, na.rm=TRUE)
+summary(data$stateTax, na.rm=TRUE)
+```
+
+
+6. Subset the data to only retain those houses that are principal residences and describe the distribution of property taxes on these residences.
+
+```{r, chunk6, echo=TRUE}
+# data subset with only principal residences
+table(data$resCode)
+data_principal <- subset(data, data$resCode == "PRINCIPAL RESIDENCE")
+dim(data)
+dim(data_principal)
+# property taxes of these residences
+summary(data_principal$cityTax, na.rm=TRUE)
+summary(data_principal$stateTax, na.rm=TRUE)
+```
+
+7. Convert the 'lotSize' variable to a numeric square feet variable. Tips:
+* Look at the data 
+* Assume hyphens represent inches within square foot meassuremnts 
+* Assume decimals within acreage measurements
+* 1 acre = 43560 square feet
+* Look at the data 
+
+```{r, chunk7, echo=TRUE}
+# lotSize variable
+head(data)
+data[100:120, c("lotSize")]
+
+```
+
+
+
+### B. "Baltimore Salary 2015" Dataset 
+
+Download the "Salary 2015" Dataset from the website (via OpenBaltimore), which is located here:
+http://sisbid.github.io/Module1/data//Baltimore_City_Employee_Salaries_FY2015.csv
+
+8. Make an object called health.sal using the salaries data set,	with only agencies of those with "fire" (or any forms), if any, in the name
+
+##### install.packages("readr")
+##### install.packages("stringr")
+##### .
+
+
+```{r, chunk8, echo=TRUE}
+library(readr)
+data_url <- "http://sisbid.github.io/Module1/data//Baltimore_City_Employee_Salaries_FY2015.csv"
+data <- read_csv(data_url)
+head(data)
+dim(data)
+names(data)
+# subset rows where any word in "Agency" variable is "fire"
+data_subset <- data[grep("Fire", data$Agency), ] 
+head(data_subset)
+rm(data_subset)
+```
+
+
+9. Make a data set called trans which contains only agencies that contain "TRANS".
+
+```{r, chunk9, echo=TRUE}
+# subset rows where any word in "Agency" variable is "TRANS"
+data_subset <- data[grep("TRANS", data$Agency), ] 
+dim(data)
+dim(data_subset)
+head(data_subset)
+rm(data_subset)
+```
+
+
+10. What is/are the profession(s) of people who have "abra" in their name for Baltimore's Salaries?
+
+install.packages("stringr")
+
+```{r, chunk10, echo=TRUE}
+library(stringr)
+# people with "abra" in their name
+names(data)
+data$NAMES <- data[, 1]
+data_subset <- data[grep("Aaron", data$NAMES), ] 
+dim(data)
+dim(data_subset)
+head(data_subset)
+rm(data_subset)
+```
+
+
+11. What is the distribution of annual salaries look like? What is the IQR?
+
+```{r, chunk11a, echo=TRUE}
+names(data)
+head(data)
+# replace "$" with ""
+data$AnnualSalary <- gsub(pattern = "$", replacement="", data$AnnualSalary, fixed=TRUE)
+# convert to numeric
+data$AnnualSalary <- as.numeric(data$AnnualSalary)
+# summarize
+summary(data$AnnualSalary, na.rm=TRUE)
+```
+
+- histogram 
+```{r, chunk11b, echo=TRUE, fig.height=5}
+hist(data$AnnualSalary)
+```
+
+
+12. Convert HireDate to the `Date` class - plot Annual Salary vs Hire Date
+
+```{r, chunk12a, echo=TRUE}
+names(data)
+head(data)
+# convert "HireDate" to a date class variable
+# %m = numerical month 1-12; %d = numerical day 1-31; %Y = 4 digit year
+data$HireDate <- as.Date(data$HireDate, "%m/%d/%Y")
+class(data$HireDate)
+```
+
+13. Plot annual salary versus hire date.	Hint: first convert to numeric and date respectively
+- plot annual salary vs hire date
+
+
+```{r, chunk12b, echo=TRUE, fig.height=5}
+names(data)
+head(data)
+plot(data$HireDate, data$AnnualSalary)
+```
+
+
+
+14. Create a smaller dataset that only includes the Police Department, Fire Department and Sheriff's Office. How many employees are in this new dataset?
+
+```{r, chunk14, echo=TRUE}
+names(data)
+head(data)
+data_subset <- data[grep("Police|Fire|Sheriff", data$Agency), ] #subset if "Agency" includes Police, Fire, or Sherrif
+dim(data)
+dim(data_subset)
+head(data_subset)
+rm(data_subset)
+```
+
+
+
+
+### Include the session tools
+```{r 10, echo=TRUE}
+devtools::session_info()
+```
+
+
+
